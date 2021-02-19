@@ -1,131 +1,123 @@
-<article class="row">
-  <form name="jnsperawatan" action="{?=url(ADMIN.'/master/jnsperawatansave/'.@$jnsperawatan.form.kd_jenis_prw)?}" method="POST">
-    <div class="col-md-8">
-        <div class="panel panel-default">
-            <div class="panel-heading">
-                <h3 class="panel-title">{$jnsperawatan.title}</h3>
+<div id="form">
+  <div class="row col-md-5 m-r-md">
+    <div class="panel panel-default">
+      <div class="panel-body">
+        <div class="form-horizontal">
+          <div class="form-group">
+            <label for="" class="col-sm-3 control-label">Kode</label>
+            <div class="col-sm-9">
+              <input type="text" id="kd_jenis_prw" name="kd_jenis_prw" class="form-control" value="{$jnsperawatan.form.kd_jenis_prw}" {if: !empty($jnsperawatan.form.kd_jenis_prw)}disabled{/if}>
             </div>
-            <div class="panel-body">
-                <div class="row clearfix">
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            <label>Kode Jenis Perawatan</label>
-                            <input type="text" name="kd_jenis_prw" class="form-control" value="{$jnsperawatan.form.kd_jenis_prw}" />
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            <label>Nama Perawatan</label>
-                            <input type="text" name="nm_perawatan" class="form-control" value="{$jnsperawatan.form.nm_perawatan}" />
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            <label>Kode Kategori</label>
-                            <input type="text" name="kd_kategori" class="form-control" value="{$jnsperawatan.form.kd_kategori}" />
-                        </div>
-                    </div>
-                </div>
-                <div class="row clearfix">
-                    <div class="col-md-3">
-                        <div class="form-group">
-                            <label>Material</label>
-                            <input type="text" name="material" class="form-control" value="{$jnsperawatan.form.material}" />
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="form-group">
-                            <label>KSO</label>
-                            <input type="text" name="kso" class="form-control" value="{$jnsperawatan.form.kso}" />
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="form-group">
-                            <label>Menejemen</label>
-                            <input type="text" name="menejemen" class="form-control" value="{$jnsperawatan.form.menejemen}" />
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="form-group">
-                            <label>BHP</label>
-                            <input type="text" name="bhp" class="form-control" value="{$jnsperawatan.form.bhp}" />
-                        </div>
-                    </div>
-                </div>
-                <div class="row clearfix">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label>Tarif Tindakan Dokter</label>
-                            <input type="text" name="tarif_tindakandr" class="form-control" value="{$jnsperawatan.form.tarif_tindakandr}" />
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                      <div class="form-group">
-                          <label>Tarif Tindakan Perawat</label>
-                          <input type="text" name="tarif_tindakanpr" class="form-control" value="{$jnsperawatan.form.tarif_tindakanpr}" />
-                      </div>
-                    </div>
-                </div>
-                <div class="row clearfix">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label>Total Bayar Dokter</label>
-                            <input type="text" name="total_byrdr" class="form-control" value="{$jnsperawatan.form.total_byrdr}" />
-                        </div>
-                    </div>
-                </div>
-                <div class="row clearfix">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label>Total Bayar Perawat</label>
-                            <input type="text" name="total_byrpr" class="form-control" value="{$jnsperawatan.form.total_byrpr}" />
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label>Total Bayar Dokter dan Perawat</label>
-                            <input type="text" name="total_byrdrpr" class="form-control" value="{$jnsperawatan.form.total_byrdrpr}" />
-                        </div>
-                    </div>
-                </div>
+          </div>
+          <div class="form-group">
+            <label for="" class="col-sm-3 control-label">Nama</label>
+            <div class="col-sm-9">
+              <input type="text" name="nm_perawatan" class="form-control" value="{$jnsperawatan.form.nm_perawatan}">
             </div>
+          </div>
+          <div class="form-group">
+            <label for="" class="col-sm-3 control-label">Kategori</label>
+            <div class="col-sm-9">
+              <select class="form-control" name="kd_kategori">
+                {loop: $jnsperawatan.kategori_perawatan}
+                <option value="{$value.kd_kategori}"{if: $jnsperawatan.form.kd_kategori == $value.kd_kategori} selected{/if}>{$value.nm_kategori}</option>
+                {/loop}
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="" class="col-sm-3 control-label">Material</label>
+            <div class="col-sm-9">
+              <input type="text" name="material" class="form-control" value="{$jnsperawatan.form.material}">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="" class="col-sm-3 control-label">BHP</label>
+            <div class="col-sm-9">
+              <input type="text" name="bhp" class="form-control" value="{$jnsperawatan.form.bhp}">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="" class="col-sm-3 control-label">Tarif Dokter</label>
+            <div class="col-sm-9">
+              <input type="text" name="tarif_tindakandr" class="form-control" value="{$jnsperawatan.form.tarif_tindakandr}">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="" class="col-sm-3 control-label">Tarif Perawat</label>
+            <div class="col-sm-9">
+              <input type="text" name="tarif_tindakanpr" class="form-control" value="{$jnsperawatan.form.tarif_tindakanpr}">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="" class="col-sm-3 control-label">KSO</label>
+            <div class="col-sm-9">
+              <input type="text" name="kso" class="form-control" value="{$jnsperawatan.form.kso}">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="" class="col-sm-3 control-label">Manajemen</label>
+            <div class="col-sm-9">
+              <input type="text" name="menejemen" class="form-control" value="{$jnsperawatan.form.menejemen}">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="" class="col-sm-3 control-label">Total Dokter</label>
+            <div class="col-sm-9">
+              <input type="text" name="total_byrdr" class="form-control" value="{$jnsperawatan.form.total_byrdr}">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="" class="col-sm-3 control-label">Total Perawat</label>
+            <div class="col-sm-9">
+              <input type="text" name="total_byrpr" class="form-control" value="{$jnsperawatan.form.total_byrpr}">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="" class="col-sm-3 control-label">Total Dr & Pr</label>
+            <div class="col-sm-9">
+              <input type="text" name="total_byrdrpr" class="form-control" value="{$jnsperawatan.form.total_byrdrpr}">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="" class="col-sm-3 control-label">Penjab</label>
+            <div class="col-sm-9">
+              <select class="form-control" name="kd_pj">
+                {loop: $jnsperawatan.penjab}
+                <option value="{$value.kd_pj}"{if: $jnsperawatan.form.kd_pj == $value.kd_pj} selected{/if}>{$value.png_jawab}</option>
+                {/loop}
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="" class="col-sm-3 control-label">Poliklinik</label>
+            <div class="col-sm-9">
+              <select class="form-control" name="kd_poli">
+                {loop: $jnsperawatan.poliklinik}
+                <option value="{$value.kd_poli}"{if: $jnsperawatan.form.kd_poli == $value.kd_poli} selected{/if}>{$value.nm_poli}</option>
+                {/loop}
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="" class="col-sm-3 control-label">Status</label>
+            <div class="col-sm-9">
+              <select class="form-control" name="status">
+                <option value="1"{if: $jnsperawatan.form.status == '1'} selected{/if}>Aktif</option>
+                <option value="0"{if: $jnsperawatan.form.status == '0'} selected{/if}>Tidak Aktif</option>
+              </select>
+            </div>
+          </div>
         </div>
+      </div>
     </div>
-    <div class="col-md-4">
-        <div class="panel panel-default">
-            <div class="panel-heading">
-                <h3 class="panel-title">Informasi Tambahan</h3>
-            </div>
-            <div class="panel-body">
-                <div class="form-group">
-                    <label>Cara Bayar</label>
-                    <select name="kd_pj" id="kd_pj" class="form-control">
-                      {loop: $jnsperawatan.kd_pj}
-                        <option value="{$value.kd_pj}"{if: $value.kd_pj == $jnsperawatan.form.kd_pj} selected{/if}>{$value.png_jawab}</option>
-                      {/loop}
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Poliklinik</label>
-                    <select name="kd_poli" id="kd_poli" class="form-control">
-                      {loop: $jnsperawatan.kd_poli}
-                        <option value="{$value.kd_poli}"{if: $value.kd_poli == $jnsperawatan.form.kd_poli} selected{/if}>{$value.nm_poli}</option>
-                      {/loop}
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Status</label>
-                    <select name="status" id="status" class="form-control">
-                      {loop: $jnsperawatan.status}
-                        <option value="{$value}"{if: $value == $jnsperawatan.form.status} selected{/if}>{$value}</option>
-                      {/loop}
-                    </select>
-                </div>
-                <div class="form-group">
-                    <input type="submit" name="save" class="btn btn-primary" value="Simpan" />
-                </div>
-            </div>
-        </div>
+    <div class="m-b-xl clearfix">
+      <button type="button" name="button" class="btn btn-primary" id="simpan"><i class="fa fa-save"></i><span class="hidden-xs"> Simpan</span></button>
+      <button type="button" name="button" class="btn btn-danger" id="hapus"><i class="fa fa-trash"></i><span class="hidden-xs"> Hapus</span></button>
+      <button type="button" name="button" class="btn btn-warning" id="batal"><i class="fa fa-close"></i><span class="hidden-xs"> Batal</span></button>
     </div>
-  </form>
-</article>
+  </div>
+</div>
+<script type="text/javascript">
+  $('select').selectator();
+</script>

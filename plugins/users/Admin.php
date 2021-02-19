@@ -21,14 +21,10 @@ class Admin extends AdminModule
     */
     public function getManage()
     {
-        $this->_addHeaderFiles();
-        $rows = $this->db()->pdo()->prepare("SELECT lite_roles.*, pegawai.nama as nama, AES_DECRYPT(user.password,'windi') as password FROM lite_roles, pegawai, user WHERE pegawai.nik = lite_roles.username AND pegawai.nik = AES_DECRYPT(user.id_user,'nur') AND lite_roles.id !=1");
-        $rows->execute();
-        $rows = $rows->fetchAll();
-
+        $rows = $this->db('mlite_users')->toArray();
         foreach ($rows as &$row) {
-            if (empty($row['nama'])) {
-                $row['nama'] = '----';
+            if (empty($row['fullname'])) {
+                $row['fullname'] = '----';
             }
             $row['editURL'] = url([ADMIN, 'users', 'edit', $row['id']]);
             $row['delURL']  = url([ADMIN, 'users', 'delete', $row['id']]);
@@ -37,25 +33,23 @@ class Admin extends AdminModule
         return $this->draw('manage.html', ['myId' => $this->core->getUserInfo('id'), 'users' => $rows]);
     }
 
-
     /**
     * add new user
     */
     public function getAdd()
     {
-        $this->_addHeaderFiles();
         $this->_addInfoUser();
-        $this->_addInfoRole();
-        $this->_addInfoCap();
-
+        $this->_getInfoRole();
         if (!empty($redirectData = getRedirectData())) {
             $this->assign['form'] = filter_var_array($redirectData, FILTER_SANITIZE_STRING);
         } else {
-            $this->assign['form'] = ['username' => '', 'role' => '', 'cap' => '', 'access' => ''];
+            $this->assign['form'] = ['username' => '', 'email' => '', 'fullname' => '', 'description' => '', 'role' => '', 'cap' => ''];
         }
 
         $this->assign['title'] = 'Pengguna baru';
         $this->assign['modules'] = $this->_getModules('all');
+        $this->assign['cap'] = $this->_getInfoCap();
+        $this->assign['avatarURL'] = url(MODULES.'/users/img/default.png');
 
         return $this->draw('form.html', ['users' => $this->assign]);
     }
@@ -65,17 +59,16 @@ class Admin extends AdminModule
     */
     public function getEdit($id)
     {
-        $row = $this->db('lite_roles')->oneArray($id);
-
-        $this->_addHeaderFiles();
         $this->_addInfoUser();
-        $this->_addInfoRole();
-        $this->_addInfoCap();
+        $this->_getInfoRole();
+        $user = $this->db('mlite_users')->oneArray($id);
 
-        if (!empty($row)) {
-            $this->assign['form'] = $row;
-            $this->assign['title'] = 'Edit pengguna';
-            $this->assign['modules'] = $this->_getModules($row['access']);
+        if (!empty($user)) {
+            $this->assign['form'] = $user;
+            $this->assign['title'] = 'Sunting pengguna';
+            $this->assign['modules'] = $this->_getModules($user['access']);
+            $this->assign['cap'] = $this->_getInfoCap($user['cap']);
+            $this->assign['avatarURL'] = url(UPLOADS.'/users/'.$user['avatar']);
 
             return $this->draw('form.html', ['users' => $this->assign]);
         } else {
@@ -103,20 +96,26 @@ class Admin extends AdminModule
         }
 
         // check if required fields are empty
-        if (checkEmptyFields(['username', 'access'], $_POST)) {
-            $this->notify('failure', 'Isian kosong');
+        if (checkEmptyFields(['username', 'email', 'access'], $_POST)) {
+            $this->notify('failure', 'Isian kosong.');
             redirect($location, $_POST);
         }
 
         // check if user already exists
         if ($this->_userAlreadyExists($id)) {
             $errors++;
-            $this->notify('failure', 'Pengguna sudah ada');
+            $this->notify('failure', 'Pengguna sudah terdaftar.');
+        }
+        // chech if e-mail adress is correct
+        $_POST['email'] = filter_var($_POST['email'], FILTER_SANITIZE_EMAIL);
+        if (!filter_var($_POST['email'], FILTER_VALIDATE_EMAIL)) {
+            $errors++;
+            $this->notify('failure', 'Email salah');
         }
         // check if password is longer than 5 characters
         if (isset($_POST['password']) && strlen($_POST['password']) < 5) {
             $errors++;
-            $this->notify('failure', 'Kata kunci terlalu pendek');
+            $this->notify('failure', 'Password terlalu pendek.');
         }
         // access to modules
         if ((count($_POST['access']) == count($this->_getModules())) || ($id == 1)) {
@@ -126,35 +125,59 @@ class Admin extends AdminModule
             $_POST['access'] = implode(',', $_POST['access']);
         }
 
+        $_POST['cap'] = implode(',', $_POST['cap']);
+
         // CREATE / EDIT
         if (!$errors) {
             unset($_POST['save']);
 
-            if (!$id) {    // new
-                $this->core->db()->pdo()->exec("DROP TABLE IF EXISTS temp_user");
-                $this->core->db()->pdo()->exec("CREATE TABLE IF NOT EXISTS temp_user LIKE user");
-                $this->core->db()->pdo()->exec("INSERT INTO temp_user SELECT * FROM user WHERE id_user=(SELECT id_user FROM user LIMIT 1)");
-                $this->core->db()->pdo()->exec("UPDATE temp_user SET id_user=AES_ENCRYPT('$_POST[username]','nur'), password=AES_ENCRYPT('$_POST[username]','windi')");
+            if (!empty($_POST['password'])) {
+                $_POST['password'] = password_hash($_POST['password'], PASSWORD_BCRYPT);
+            }
 
-                $row_user = $this->db()->pdo()->prepare("SELECT AES_DECRYPT('$_POST[username]','nur') FROM user");
-                $row_user->execute();
-                $row_user = $row_user->fetch();
+            if (($photo = isset_or($_FILES['photo']['tmp_name'], false)) || !$id) {
+                $img = new \Systems\Lib\Image;
 
-                if(!$row_user) {
-                  $this->core->db()->pdo()->exec("INSERT INTO user SELECT * FROM temp_user");
+                if (empty($photo) && !$id) {
+                    $photo = MODULES.'/users/img/default.png';
                 }
+                if ($img->load($photo)) {
+                    if ($img->getInfos('width') < $img->getInfos('height')) {
+                        $img->crop(0, 0, $img->getInfos('width'), $img->getInfos('width'));
+                    } else {
+                        $img->crop(0, 0, $img->getInfos('height'), $img->getInfos('height'));
+                    }
 
-                $this->core->db()->pdo()->exec("DROP TABLE temp_user");
-                $query = $this->db('lite_roles')->save($_POST);
+                    if ($img->getInfos('width') > 512) {
+                        $img->resize(512, 512);
+                    }
 
+                    if ($id) {
+                        $user = $this->db('mlite_users')->oneArray($id);
+                    }
+
+                    $_POST['avatar'] = uniqid('avatar').".".$img->getInfos('type');
+                }
+            }
+
+            if (!$id) {    // new
+                $query = $this->db('mlite_users')->save($_POST);
             } else {        // edit
-                $query = $this->db('lite_roles')->where('id', $id)->save($_POST);
+                $query = $this->db('mlite_users')->where('id', $id)->save($_POST);
             }
 
             if ($query) {
-                $this->notify('success', 'Simpan sukes');
+                if (isset($img) && $img->getInfos('width')) {
+                    if (isset($user)) {
+                        unlink(UPLOADS."/users/".$user['avatar']);
+                    }
+
+                    $img->save(UPLOADS."/users/".$_POST['avatar']);
+                }
+
+                $this->notify('success', 'Pengguna berhasil disimpan.');
             } else {
-                $this->notify('failure', 'Simpan gagal');
+                $this->notify('failure', 'Gagak menyimpan pengguna.');
             }
 
             redirect($location);
@@ -168,14 +191,73 @@ class Admin extends AdminModule
     */
     public function getDelete($id)
     {
-        if ($id != 1 && $this->core->getUserInfo('id') != $id && ($row = $this->db('lite_roles')->oneArray($id))) {
-            if ($this->db('lite_roles')->delete($id)) {
-                $this->notify('success', 'Hapus sukses');
+        if ($id != 1 && $this->core->getUserInfo('id') != $id && ($user = $this->db('mlite_users')->oneArray($id))) {
+            if ($this->db('mlite_users')->delete($id)) {
+                if (!empty($user['avatar'])) {
+                    unlink(UPLOADS."/users/".$user['avatar']);
+                }
+
+                $this->notify('success', 'Pengguna berhasil dihapus.');
             } else {
-                $this->notify('failure', 'Hapus gagal');
+                $this->notify('failure', 'Tak dapat menghapus pengguna.');
             }
         }
         redirect(url([ADMIN, 'users', 'manage']));
+    }
+
+    private function _addInfoUser() {
+        // get users
+        $rows = $this->db('pegawai')->where('stts_aktif', '!=', 'KELUAR')->toArray();
+
+        if (count($rows)) {
+          $this->assign['user'] = [];
+          foreach($rows as $row) {
+              $this->assign['user'][] = $row;
+          }
+        }
+    }
+
+    /**
+    * list of active user roles
+    * @return array
+    */
+
+    private function _getInfoRole() {
+      $role = array('pengguna','kasir','rekammedis','radiologi','laboratorium','paramedis','apoteker','medis','manajemen','admin');
+      if (count($role)) {
+        $this->assign['role'] = [];
+        foreach($role as $row) {
+            $this->assign['role'][] = $row;
+        }
+      }
+    }
+
+    private function _getInfoCap($kd_poli = null)
+    {
+        $result = [];
+        $rows = $this->db()->pdo()->prepare("(SELECT kd_poli AS cap, nm_poli AS nm_cap FROM poliklinik) UNION (SELECT kd_bangsal AS cap, nm_bangsal AS nm_cap FROM bangsal)");
+        $rows->execute();
+        $rows = $rows->fetchAll();
+
+        if (!$kd_poli) {
+            $kd_poliArray = [];
+        } else {
+            $kd_poliArray = explode(',', $kd_poli);
+        }
+
+        foreach ($rows as $row) {
+            if (empty($kd_poliArray)) {
+                $attr = '';
+            } else {
+                if (in_array($row['cap'], $kd_poliArray)) {
+                    $attr = 'selected';
+                } else {
+                    $attr = '';
+                }
+            }
+            $result[] = ['cap' => $row['cap'], 'nm_cap' => $row['nm_cap'], 'attr' => $attr];
+        }
+        return $result;
     }
 
     /**
@@ -185,7 +267,7 @@ class Admin extends AdminModule
     private function _getModules($access = null)
     {
         $result = [];
-        $rows = $this->db('lite_modules')->toArray();
+        $rows = $this->db('mlite_modules')->toArray();
 
         if (!$access) {
             $accessArray = [];
@@ -219,9 +301,9 @@ class Admin extends AdminModule
     private function _userAlreadyExists($id = null)
     {
         if (!$id) {    // new
-            $count = $this->db('lite_roles')->where('username', $_POST['username'])->count();
+            $count = $this->db('mlite_users')->where('username', $_POST['username'])->count();
         } else {        // edit
-            $count = $this->db('lite_roles')->where('username', $_POST['username'])->where('id', '<>', $id)->count();
+            $count = $this->db('mlite_users')->where('username', $_POST['username'])->where('id', '<>', $id)->count();
         }
         if ($count > 0) {
             return true;
@@ -229,66 +311,4 @@ class Admin extends AdminModule
             return false;
         }
     }
-
-    /**
-    * module JavaScript
-    */
-    public function getJavascript()
-    {
-        header('Content-type: text/javascript');
-        echo $this->draw(MODULES.'/users/js/admin/users.js');
-        exit();
-    }
-
-    private function _addHeaderFiles()
-    {
-        // CSS
-        $this->core->addCSS(url('assets/css/jquery-ui.css'));
-        $this->core->addCSS(url('assets/css/dataTables.bootstrap.min.css'));
-
-        // JS
-        $this->core->addJS(url('assets/jscripts/jquery-ui.js'), 'footer');
-        $this->core->addJS(url('assets/jscripts/jquery.dataTables.min.js'), 'footer');
-        $this->core->addJS(url('assets/jscripts/dataTables.bootstrap.min.js'), 'footer');
-
-        // MODULE SCRIPTS
-        $this->core->addJS(url([ADMIN, 'users', 'javascript']), 'footer');
-    }
-
-    private function _addInfoUser() {
-        // get users
-        $rows = $this->db('pegawai')->toArray();
-
-        if (count($rows)) {
-          $this->assign['user'] = [];
-          foreach($rows as $row) {
-              $this->assign['user'][] = $row;
-          }
-        }
-    }
-
-    private function _addInfoRole() {
-      $role = array('admin','manajemen','medis','paramedis','apoteker','rekammedis','kasir');
-      if (count($role)) {
-        $this->assign['role'] = [];
-        foreach($role as $row) {
-            $this->assign['role'][] = $row;
-        }
-      }
-    }
-
-    private function _addInfoCap() {
-      $cap = $this->db()->pdo()->prepare("(SELECT kd_poli AS cap, nm_poli AS nm_cap FROM poliklinik) UNION (SELECT kd_bangsal AS cap, nm_bangsal AS nm_cap FROM bangsal)");
-      //$cap = $this->db()->pdo()->prepare("SELECT kd_poli AS cap, nm_poli AS nm_cap FROM poliklinik");
-      $cap->execute();
-      $cap = $cap->fetchAll();
-
-      if (count($cap)) {
-        $this->assign['cap'] = [];
-        foreach($cap as $row) {
-            $this->assign['cap'][] = $row;
-        }
-      }
-    }
-
 }

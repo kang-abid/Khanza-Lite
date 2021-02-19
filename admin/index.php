@@ -16,13 +16,11 @@ if (DEV_MODE) {
 
 require_once('../systems/lib/Autoloader.php');
 
-// Admin core init
 $core = new Systems\Admin;
 
 if ($core->loginCheck()) {
     $core->loadModules();
 
-    // Modules routing
     $core->router->set('(:str)/(:str)(:any)', function ($module, $method, $params) use ($core) {
         $core->createNav($module, $method);
         if ($params) {

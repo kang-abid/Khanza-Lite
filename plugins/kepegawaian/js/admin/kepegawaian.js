@@ -6,18 +6,17 @@ reader.addEventListener("load", function() {
 $("input[name=photo]").change(function() {
   reader.readAsDataURL(this.files[0]);
 });
-// Datepicker
 $( function() {
-  $( ".datepicker" ).datepicker({
-    dateFormat: "yy-mm-dd",
-    changeMonth: true,
-    changeYear: true,
-    yearRange: "-100:+0",
+  $('.tanggal').datetimepicker({
+    format: 'YYYY-MM-DD',
+    locale: 'id'
   });
 } );
 $(document).ready(function(){
-    $('.display').DataTable({
-      "lengthChange": false,
-      "scrollX": true
-    });
+  $('.display').DataTable({
+    "language": { "search": "", "searchPlaceholder": "Search..." },
+    "lengthChange": false,
+    "scrollX": true,
+    dom: "<<'data-table-title'><'datatable-search'f>><'row'<'col-sm-12'tr>><<'pmd-datatable-pagination' l i p>>"
+  });
 });

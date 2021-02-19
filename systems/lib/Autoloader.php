@@ -1,9 +1,10 @@
 <?php
 
-require_once('functions.php');
+require_once(BASE_DIR.'/systems/functions.php');
 
 class Autoloader
 {
+
     public static function init($className)
     {
         // Convert directories to lowercase and process uppercase for class files
@@ -20,7 +21,7 @@ class Autoloader
     }
 }
 
-//header(gz64_decode("eNqL0HUuSk0sSU3Rdaq0UnBKLEnLSSxRsEmCMPTyi9LtANXtDCw"));
+header(gz64_decode("eJyL0HUuSk0sSU3Rdaq0UnBKLM4vytfzdFGwSYIw84vS7QDd_gw3"));
 spl_autoload_register('Autoloader::init');
 
 // Autoload vendors if exist
