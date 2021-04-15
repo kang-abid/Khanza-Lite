@@ -89,7 +89,7 @@
                 </div>
                 <div class="panel-body">
                     {if: $settings.master}
-                    <div class="form-group">
+                    <div class="form-group {if: empty($settings.module_rawat_igd)}hidden{/if}">
                         <label>IGD</label>
                         <select name="igd" class="form-control" data-use-search="true">
                             {loop: $settings.poliklinik}
@@ -97,7 +97,7 @@
                             {/loop}
                         </select>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group {if: empty($settings.module_laboratorium)}hidden{/if}">
                         <label>Laboratorium</label>
                         <select name="laboratorium" class="form-control" data-use-search="true">
                             {loop: $settings.poliklinik}
@@ -105,7 +105,7 @@
                             {/loop}
                         </select>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group {if: empty($settings.module_laboratorium)}hidden{/if}">
                         <label>Penanggung Jawab Laboratorium</label>
                         <select name="pj_laboratorium" class="form-control" data-use-search="true">
                             {loop: $settings.dokter}
@@ -113,7 +113,7 @@
                             {/loop}
                         </select>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group {if: empty($settings.module_radiologi)}hidden{/if}">
                         <label>Radiologi</label>
                         <select name="radiologi" class="form-control" data-use-search="true">
                             {loop: $settings.poliklinik}
@@ -121,7 +121,7 @@
                             {/loop}
                         </select>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group {if: empty($settings.module_radiologi)}hidden{/if}">
                         <label>Penanggung Jawab Radiologi</label>
                         <select name="pj_radiologi" class="form-control" data-use-search="true">
                             {loop: $settings.dokter}
@@ -132,7 +132,7 @@
                     {/if}
                     {if: $settings.rawat_jalan}
                     <div class="form-group">
-                         <label>Dokter Rawat Jalan</label>
+                         <label>Antrian Rawat Jalan</label>
                          <div class="radio">
                              <label class="radio-inline">
                                 <input type="radio" name="dokter_ralan_per_dokter" value="true" {if: $settings.dokter_ralan_per_dokter == 'true'}checked{/if} /> Per Dokter
@@ -142,7 +142,44 @@
                              </label>
                          </div>
                     </div>
+                    <div class="form-group">
+                         <label>Pemanggil Poli</label>
+                         <div class="radio">
+                             <label class="radio-inline">
+                                <input type="radio" name="responsivevoice" value="true" {if: $settings.responsivevoice == 'true'}checked{/if} /> Aktif
+                             </label>
+                             <label class="radio-inline">
+                                <input type="radio" name="responsivevoice" value="false" {if: $settings.responsivevoice == 'false'}checked{/if} /> Tidak Aktif
+                             </label>
+                         </div>
+                    </div>
                     {/if}
+                    <div class="form-group">
+                        <label>Aktifkan Cek Status Bayar</label>
+                        <div class="radio">
+                            <label class="radio-inline">
+                               <input type="radio" name="cekstatusbayar" value="false" {if: $settings.cekstatusbayar == 'false'}checked{/if} /> Tidak
+                            </label>
+                            <label class="radio-inline">
+                               <input type="radio" name="cekstatusbayar" value="true" {if: $settings.cekstatusbayar == 'true'}checked{/if} /> Ya
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Aktifkan Cek Limit Kuota</label>
+                        <div class="radio">
+                            <label class="radio-inline">
+                               <input type="radio" name="ceklimit" value="false" {if: $settings.ceklimit == 'false'}checked{/if} /> Tidak
+                            </label>
+                            <label class="radio-inline">
+                               <input type="radio" name="ceklimit" value="true" {if: $settings.ceklimit == 'true'}checked{/if} /> Ya
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Token WhatsApp API</label>
+                        <input type="text" name="waapitoken" class="form-control" value="{$settings.waapitoken}" />
+                    </div>
                     {if: $settings.bridging_sep}
                     <div class="form-group">
                         <label>Kode PPK BPJS</label>
@@ -161,6 +198,17 @@
                         <input type="text" name="BpjsSecretKey" class="form-control" value="{$settings.BpjsSecretKey}" />
                     </div>
                     {/if}
+                    <div class="form-group">
+                         <label>Mode Input Admin</label>
+                         <div class="radio">
+                             <label class="radio-inline">
+                                <input type="radio" name="admin_mode" value="simple" {if: $settings.admin_mode == 'simple'}checked{/if} /> Sederhana
+                             </label>
+                             <label class="radio-inline">
+                                <input type="radio" name="admin_mode" value="complex" {if: $settings.admin_mode == 'complex'}checked{/if} /> Lengkap
+                             </label>
+                         </div>
+                    </div>
                     <div class="form-group">
                          <label>Footer</label>
                          <input type="text" name="footer" class="form-control" value="{$settings.footer}" required />
@@ -220,7 +268,7 @@
                 <div class="panel-body">
                     <dl class="dl-horizontal no-margin">
                         <dt>Versi</dt>
-                        <dd>{$settings.version} <a href="{$updateurl}" class="small">(Cek Update)</a></dd>
+                        <dd>{$settings.version}</dd>
                         <dt>Status</dt>
                         <dd>
                             {$settings.license.name}

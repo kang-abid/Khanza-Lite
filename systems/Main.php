@@ -146,11 +146,11 @@ abstract class Main
         $hasHeader = get_headers_list('X-Created-By') === 'Basoro.ID <basoro.org>';
         $license = License::verify($core->settings->get('settings.license'));
         if (($license == License::UNREGISTERED) && $isHTML && (!$hasBacklink || !$hasHeader)) {
-            return '<strong>License system</strong><br />The return link has been deleted or modified.';
-        } elseif ($license == License::TIME_OUT) {
-            return $buffer.'<script>alert("License system\nCan\'t connect to license server and verify it.");</script>';
+            return '<center><strong>Ciluk baaa......</strong><br />Menghapus trade mark saya yaa....! Upsss....</center>';
+        //} elseif ($license == License::TIME_OUT) {
+        //    return $buffer.'<script>alert("Upstream Server\nCan\'t connect to server and verify it.");</script>';
         } elseif ($license == License::ERROR) {
-            return '<strong>License system</strong><br />The license is not valid. Please correct it or go to free version.';
+            return '<strong>Upstream Server</strong><br />The server is not valid. Please correct it or go to settings module and save.';
         }
 
         return trim($buffer);
@@ -265,18 +265,18 @@ abstract class Main
         return $next_no_rawat;
     }
 
-    public function setNoReg($kd_dokter)
+    public function setNoReg($kd_dokter, $kd_poli = null)
     {
-        $date = date('Y-m-d');
-        $last_no_reg = $this->db()->pdo()->prepare("SELECT ifnull(MAX(CONVERT(RIGHT(no_reg,3),signed)),0) FROM reg_periksa WHERE tgl_registrasi = '$date' AND kd_dokter = '$kd_dokter'");
-        $last_no_reg->execute();
-        $last_no_reg = $last_no_reg->fetch();
-        if(empty($last_no_reg[0])) {
-          $last_no_reg[0] = '000';
+        $max_id = $this->db('reg_periksa')->select(['no_reg' => 'ifnull(MAX(CONVERT(RIGHT(no_reg,3),signed)),0)'])->where('kd_poli', $kd_poli)->where('tgl_registrasi', date('Y-m-d'))->desc('no_reg')->limit(1)->oneArray();
+        if($this->settings->get('settings.dokter_ralan_per_dokter') == 'true') {
+          $max_id = $this->db('reg_periksa')->select(['no_reg' => 'ifnull(MAX(CONVERT(RIGHT(no_reg,3),signed)),0)'])->where('kd_poli', $kd_poli)->where('kd_dokter', $kd_dokter)->where('tgl_registrasi', date('Y-m-d'))->desc('no_reg')->limit(1)->oneArray();
         }
-        $next_no_reg = sprintf('%03s', ($last_no_reg[0] + 1));
+        if(empty($max_id['no_reg'])) {
+          $max_id['no_reg'] = '000';
+        }
+        $_next_no_reg = sprintf('%03s', ($max_id['no_reg'] + 1));
 
-        return $next_no_reg;
+        return $_next_no_reg;
     }
 
     public function setNoBooking($kd_dokter, $date)

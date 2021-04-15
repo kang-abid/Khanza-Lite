@@ -53,7 +53,7 @@
   <p class="title">{$settings.nama_instansi}</p>
   <p class="alamat">{$settings.alamat} - {$settings.kota} - {$settings.propinsi}</p>
 </div>
-{if: $kepegawaian}
+{if: $presensi}
 <div class="btn-group">
     <button class="btn btn-danger btn-fab" id="main" data-toggle="modal" data-target="#myModal">
         <i class="fa fa-plus"></i> Presensi Online
@@ -74,7 +74,7 @@
           <select class="form-control" id="shift" style="width:140px;">
             <option value="">Pilih Shift</option>
             {loop: $jam_jaga}
-            <option value="{$value.shift}">{$value.shift}</option>
+            <option value="{$value.shift}">{$value.jam_masuk} - {$value.jam_pulang}</option>
             {/loop}
           </select><br><br>
           <input type="button" class="btn btn-info" value="{if: empty($cek_presensi)}Presensi Masuk{else}Presensi Pulang{/if}" data-dismiss="modal">

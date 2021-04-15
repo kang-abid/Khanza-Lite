@@ -14,6 +14,8 @@ class Site extends SiteModule
         $this->route('anjungan/poli', 'getDisplayAntrianPoli');
         $this->route('anjungan/laboratorium', 'getDisplayAntrianLaboratorium');
         $this->route('anjungan/ajax', 'getAjax');
+        $this->route('anjungan/presensi', 'getPresensi');
+        $this->route('anjungan/presensi/upload', 'getUpload');
     }
 
     public function getIndex()
@@ -26,13 +28,32 @@ class Site extends SiteModule
         $title = 'Display Antrian Poliklinik';
         $logo  = $this->settings->get('settings.logo');
         $poliklinik = $this->db('poliklinik')->toArray();
-        echo $this->draw('display.antrian.html', [
+
+        $_username = $this->core->getUserInfo('fullname', null, true);
+        $tanggal       = getDayIndonesia(date('Y-m-d')).', '.dateIndonesia(date('Y-m-d'));
+        $username      = !empty($_username) ? $_username : $this->core->getUserInfo('username');
+
+        $content = $this->draw('display.antrian.html', [
           'title' => $title,
           'logo' => $logo,
+          'powered' => 'Powered by <a href="https://basoro.org/">KhanzaLITE</a>',
+          'username' => $username,
+          'tanggal' => $tanggal,
           'running_text' => $this->settings->get('anjungan.text_anjungan'),
           'poliklinik' => $poliklinik
         ]);
-        exit();
+
+        $assign = [
+            'title' => $this->settings->get('blog.title'),
+            'desc' => $this->settings->get('blog.desc'),
+            'content' => $content
+        ];
+
+        $this->setTemplate("canvas.html");
+
+        $this->tpl->set('page', ['title' => $assign['title'], 'desc' => $assign['desc'], 'content' => $assign['content']]);
+
+        //exit();
     }
 
     public function getDisplayAntrianPoli()
@@ -40,13 +61,32 @@ class Site extends SiteModule
         $title = 'Display Antrian Poliklinik';
         $logo  = $this->settings->get('settings.logo');
         $display = $this->_resultDisplayAntrianPoli();
-        echo $this->draw('display.antrian.poli.html', [
+
+        $_username = $this->core->getUserInfo('fullname', null, true);
+        $tanggal       = getDayIndonesia(date('Y-m-d')).', '.dateIndonesia(date('Y-m-d'));
+        $username      = !empty($_username) ? $_username : $this->core->getUserInfo('username');
+
+        $content = $this->draw('display.antrian.poli.html', [
           'title' => $title,
           'logo' => $logo,
+          'powered' => 'Powered by <a href="https://basoro.org/">KhanzaLITE</a>',
+          'username' => $username,
+          'tanggal' => $tanggal,
           'running_text' => $this->settings->get('anjungan.text_poli'),
           'display' => $display
         ]);
-        exit();
+
+        $assign = [
+            'title' => $this->settings->get('blog.title'),
+            'desc' => $this->settings->get('blog.desc'),
+            'content' => $content
+        ];
+
+        $this->setTemplate("canvas.html");
+
+        $this->tpl->set('page', ['title' => $assign['title'], 'desc' => $assign['desc'], 'content' => $assign['content']]);
+
+        //exit();
     }
 
     public function _resultDisplayAntrianPoli()
@@ -103,7 +143,7 @@ class Site extends SiteModule
                 }
                 $row['selanjutnya'] = $this->db('reg_periksa')
                   ->select('reg_periksa.no_reg')
-                  ->select(['no_urut_reg' => 'ifnull(MAX(CONVERT(RIGHT(reg_periksa.no_reg,3),signed)),0)'])
+                  //->select(['no_urut_reg' => 'ifnull(MAX(CONVERT(RIGHT(reg_periksa.no_reg,3),signed)),0)'])
                   ->select('pasien.nm_pasien')
                   ->join('pasien', 'pasien.no_rkm_medis = reg_periksa.no_rkm_medis')
                   ->where('reg_periksa.tgl_registrasi', $date)
@@ -129,8 +169,8 @@ class Site extends SiteModule
                   $interval = $row['interval'];
                 }
                 foreach ($row['selanjutnya'] as $value) {
-                  $minutes = $value['no_urut_reg'] * $interval;
-                  $row['jam_mulai'] = date('H:i',strtotime('+10 minutes',strtotime($row['jam_mulai'])));
+                  //$minutes = $value['no_reg'] * $interval;
+                  //$row['jam_mulai'] = date('H:i',strtotime('+10 minutes',strtotime($row['jam_mulai'])));
                 }
 
                 $result[] = $row;
@@ -145,13 +185,21 @@ class Site extends SiteModule
         $title = 'Display Antrian Loket';
         $logo  = $this->settings->get('settings.logo');
         $display = '';
+
+        $_username = $this->core->getUserInfo('fullname', null, true);
+        $tanggal       = getDayIndonesia(date('Y-m-d')).', '.dateIndonesia(date('Y-m-d'));
+        $username      = !empty($_username) ? $_username : $this->core->getUserInfo('username');
+
         $show = isset($_GET['show']) ? $_GET['show'] : "";
         switch($show){
           default:
             $display = 'Depan';
-            echo $this->draw('display.antrian.loket.html', [
+            $content = $this->draw('display.antrian.loket.html', [
               'title' => $title,
               'logo' => $logo,
+              'powered' => 'Powered by <a href="https://basoro.org/">KhanzaLITE</a>',
+              'username' => $username,
+              'tanggal' => $tanggal,
               'show' => $show,
               'vidio' => $this->settings->get('anjungan.vidio'),
               'running_text' => $this->settings->get('anjungan.text_loket'),
@@ -160,6 +208,11 @@ class Site extends SiteModule
           break;
           case "panggil_loket":
             $display = 'Panggil Loket';
+
+            $_username = $this->core->getUserInfo('fullname', null, true);
+            $tanggal       = getDayIndonesia(date('Y-m-d')).', '.dateIndonesia(date('Y-m-d'));
+            $username      = !empty($_username) ? $_username : $this->core->getUserInfo('username');
+
             $setting_antrian_loket = str_replace(",","','", $this->settings->get('anjungan.antrian_loket'));
             $loket = explode(",", $this->settings->get('anjungan.antrian_loket'));
             $get_antrian = $this->db('mlite_antrian_loket')->select('noantrian')->where('type', 'Loket')->where('postdate', date('Y-m-d'))->desc('start_time')->oneArray();
@@ -209,9 +262,12 @@ class Site extends SiteModule
             	$xcounter[] = '<audio id="suarabel'.$i.'" src="{?=url()?}/plugins/anjungan/suara/'.substr($tcounter,$i,1).'.wav" ></audio>';
             };
 
-            echo $this->draw('display.antrian.loket.html', [
+            $content = $this->draw('display.antrian.loket.html', [
               'title' => $title,
               'logo' => $logo,
+              'powered' => 'Powered by <a href="https://basoro.org/">KhanzaLITE</a>',
+              'username' => $username,
+              'tanggal' => $tanggal,
               'show' => $show,
               'loket' => $loket,
               'namaloket' => 'a',
@@ -273,9 +329,12 @@ class Site extends SiteModule
               $xcounter[] = '<audio id="suarabel'.$i.'" src="{?=url()?}/plugins/anjungan/suara/'.substr($tcounter,$i,1).'.wav" ></audio>';
             };
 
-            echo $this->draw('display.antrian.loket.html', [
+            $content = $this->draw('display.antrian.loket.html', [
               'title' => $title,
-              'logo' => $logo, 
+              'logo' => $logo,
+              'powered' => 'Powered by <a href="https://basoro.org/">KhanzaLITE</a>',
+              'username' => $username,
+              'tanggal' => $tanggal,
               'show' => $show,
               'loket' => $loket,
               'namaloket' => 'b',
@@ -288,7 +347,18 @@ class Site extends SiteModule
             ]);
           break;
         }
-        exit();
+
+        $assign = [
+            'title' => $this->settings->get('blog.title'),
+            'desc' => $this->settings->get('blog.desc'),
+            'content' => $content
+        ];
+
+        $this->setTemplate("canvas.html");
+
+        $this->tpl->set('page', ['title' => $assign['title'], 'desc' => $assign['desc'], 'content' => $assign['content']]);
+
+        //exit();
     }
 
     public function getDisplayAntrianLaboratorium()
@@ -296,13 +366,32 @@ class Site extends SiteModule
         $logo  = $this->settings->get('settings.logo');
         $title = 'Display Antrian Laboratorium';
         $display = $this->_resultDisplayAntrianLaboratorium();
-        echo $this->draw('display.antrian.laboratorium.html', [
+
+        $_username = $this->core->getUserInfo('fullname', null, true);
+        $tanggal       = getDayIndonesia(date('Y-m-d')).', '.dateIndonesia(date('Y-m-d'));
+        $username      = !empty($_username) ? $_username : $this->core->getUserInfo('username');
+
+        $content = $this->draw('display.antrian.laboratorium.html', [
           'logo' => $logo,
           'title' => $title,
+          'powered' => 'Powered by <a href="https://basoro.org/">KhanzaLITE</a>',
+          'username' => $username,
+          'tanggal' => $tanggal,
           'running_text' => $this->settings->get('anjungan.text_laboratorium'),
           'display' => $display
         ]);
-        exit();
+
+        $assign = [
+            'title' => $this->settings->get('blog.title'),
+            'desc' => $this->settings->get('blog.desc'),
+            'content' => $content
+        ];
+
+        $this->setTemplate("canvas.html");
+
+        $this->tpl->set('page', ['title' => $assign['title'], 'desc' => $assign['desc'], 'content' => $assign['content']]);
+
+        //exit();
     }
 
     public function _resultDisplayAntrianLaboratorium()
@@ -648,7 +737,7 @@ class Site extends SiteModule
               $data = array();
               $date = date('Y-m-d');
 
-              $_POST['no_reg']     = $this->core->setNoReg($_POST['kd_dokter']);
+              $_POST['no_reg']     = $this->core->setNoReg($_POST['kd_dokter'], $_POST['kd_poli']);
               $_POST['hubunganpj'] = $this->core->getPasienInfo('keluarga', $_POST['no_rkm_medis']);
               $_POST['almt_pj']    = $this->core->getPasienInfo('alamat', $_POST['no_rkm_medis']);
               $_POST['p_jawab']    = $this->core->getPasienInfo('namakeluarga', $_POST['no_rkm_medis']);
@@ -698,6 +787,7 @@ class Site extends SiteModule
               $_POST['kd_pj']           = $this->settings->get('anjungan.carabayar_umum');
               $_POST['status_bayar']    = 'Belum Bayar';
               $_POST['no_rawat'] = $this->core->setNoRawat();
+              $_POST['jam_reg'] = date('H:i:s');
 
               $query = $this->db('reg_periksa')->save($_POST);
 
@@ -734,4 +824,165 @@ class Site extends SiteModule
       }
       exit();
     }
+
+    public function getPresensi()
+    {
+
+      $title = 'Presensi Pegawai';
+      $logo  = $this->settings->get('settings.logo');
+
+      $tanggal       = getDayIndonesia(date('Y-m-d')).', '.dateIndonesia(date('Y-m-d'));
+
+      $content = $this->draw('presensi.html', [
+        'title' => $title,
+        'notify' => $this->core->getNotify(),
+        'logo' => $logo,
+        'powered' => 'Powered by <a href="https://basoro.org/">KhanzaLITE</a>',
+        'tanggal' => $tanggal,
+        'running_text' => $this->settings->get('anjungan.text_poli'),
+        'jam_jaga' => $this->db('jam_jaga')->group('jam_masuk')->toArray()
+      ]);
+
+      $assign = [
+          'title' => $this->settings->get('blog.title'),
+          'desc' => $this->settings->get('blog.desc'),
+          'content' => $content
+      ];
+
+      $this->setTemplate("canvas.html");
+
+      $this->tpl->set('page', ['title' => $assign['title'], 'desc' => $assign['desc'], 'content' => $assign['content']]);
+    }
+
+    public function getUpload()
+    {
+      if ($photo = isset_or($_FILES['webcam']['tmp_name'], false)) {
+          $img = new \Systems\Lib\Image;
+          if ($img->load($photo)) {
+              if ($img->getInfos('width') < $img->getInfos('height')) {
+                  $img->crop(0, 0, $img->getInfos('width'), $img->getInfos('width'));
+              } else {
+                  $img->crop(0, 0, $img->getInfos('height'), $img->getInfos('height'));
+              }
+
+              if ($img->getInfos('width') > 512) {
+                  $img->resize(512, 512);
+              }
+              $gambar = uniqid('photo').".".$img->getInfos('type');
+          }
+
+          if (isset($img) && $img->getInfos('width')) {
+
+              $img->save(WEBAPPS_PATH."/presensi/".$gambar);
+
+              $urlnya         = WEBAPPS_URL.'/presensi/'.$gambar;
+              $barcode        = $_GET['barcode'];
+
+              $idpeg          = $this->db('barcode')->where('barcode', $barcode)->oneArray();
+              $jam_jaga       = $this->db('jam_jaga')->join('pegawai', 'pegawai.departemen = jam_jaga.dep_id')->where('pegawai.id', $idpeg['id'])->where('jam_jaga.shift', $_GET['shift'])->oneArray();
+              $jadwal_pegawai = $this->db('jadwal_pegawai')->where('id', $idpeg['id'])->where('h'.date('j'), $_GET['shift'])->oneArray();
+
+              $set_keterlambatan  = $this->db('set_keterlambatan')->toArray();
+              $toleransi      = $set_keterlambatan['toleransi'];
+              $terlambat1     = $set_keterlambatan['terlambat1'];
+              $terlambat2     = $set_keterlambatan['terlambat2'];
+
+              $valid = $this->db('rekap_presensi')->where('id', $idpeg['id'])->where('shift', $jam_jaga['shift'])->like('jam_datang', '%'.date('Y-m-d').'%')->oneArray();
+
+              if($valid){
+                  $this->notify('failure', 'Anda sudah presensi untuk tanggal '.date('Y-m-d'));
+              //}elseif((!empty($idpeg['id']))&&(!empty($jam_jaga['shift']))&&($jadwal_pegawai)&&(!$valid)) {
+              }elseif((!empty($idpeg['id']))) {
+                  $cek = $this->db('temporary_presensi')->where('id', $idpeg['id'])->oneArray();
+
+                  if(!$cek){
+                      if(empty($urlnya)){
+                          $this->notify('failure', 'Pilih shift dulu...!!!!');
+                      }else{
+
+                          $status = 'Tepat Waktu';
+
+                          if((strtotime(date('Y-m-d H:i:s'))-strtotime(date('Y-m-d').' '.$jam_jaga['jam_masuk']))>($toleransi*60)) {
+                            $status = 'Terlambat Toleransi';
+                          }
+                          if((strtotime(date('Y-m-d H:i:s'))-strtotime(date('Y-m-d').' '.$jam_jaga['jam_masuk']))>($terlambat1*60)) {
+                            $status = 'Terlambat I';
+                          }
+                          if((strtotime(date('Y-m-d H:i:s'))-strtotime(date('Y-m-d').' '.$jam_jaga['jam_masuk']))>($terlambat2*60)) {
+                            $status = 'Terlambat II';
+                          }
+
+                          if(strtotime(date('Y-m-d H:i:s'))-(date('Y-m-d').' '.$jam_jaga['jam_masuk'])>($toleransi*60)) {
+                            $awal  = new \DateTime(date('Y-m-d').' '.$jam_jaga['jam_masuk']);
+                            $akhir = new \DateTime();
+                            $diff = $akhir->diff($awal,true); // to make the difference to be always positive.
+                            $keterlambatan = $diff->format('%H:%I:%S');
+
+                          }
+
+                          $insert = $this->db('temporary_presensi')
+                            ->save([
+                              'id' => $idpeg['id'],
+                              'shift' => $jam_jaga['shift'],
+                              'jam_datang' => date('Y-m-d H:i:s'),
+                              'jam_pulang' => NULL,
+                              'status' => $status,
+                              'keterlambatan' => $keterlambatan,
+                              'durasi' => '',
+                              'photo' => $urlnya
+                            ]);
+
+                          if($insert) {
+                            $this->notify('success', 'Presensi Masuk jam '.$jam_jaga['jam_masuk'].' '.$status.' '.$keterlambatan);
+                          }
+                      }
+                  }elseif($cek){
+
+                      $status = $cek['status'];
+                      if((strtotime(date('Y-m-d H:i:s'))-strtotime(date('Y-m-d').' '.$jam_jaga['jam_pulang']))<0) {
+                        $status = $cek['status'].' & PSW';
+                      }
+
+                      $awal  = new \DateTime($cek['jam_datang']);
+                      $akhir = new \DateTime();
+                      $diff = $akhir->diff($awal,true); // to make the difference to be always positive.
+                      $durasi = $diff->format('%H:%I:%S');
+
+                      $ubah = $this->db('temporary_presensi')
+                        ->where('id', $idpeg['id'])
+                        ->save([
+                          'jam_pulang' => date('Y-m-d H:i:s'),
+                          'status' => $status,
+                          'durasi' => $durasi
+                        ]);
+
+                      if($ubah) {
+                          $presensi = $this->db('temporary_presensi')->where('id', $cek['id'])->oneArray();
+                          $insert = $this->db('rekap_presensi')
+                            ->save([
+                              'id' => $presensi['id'],
+                              'shift' => $presensi['shift'],
+                              'jam_datang' => $presensi['jam_datang'],
+                              'jam_pulang' => $presensi['jam_pulang'],
+                              'status' => $presensi['status'],
+                              'keterlambatan' => $presensi['keterlambatan'],
+                              'durasi' => $presensi['durasi'],
+                              'keterangan' => '-',
+                              'photo' => $presensi['photo']
+                            ]);
+                          if($insert) {
+                              $this->notify('success', 'Presensi pulang telah disimpan');
+                              $this->db('temporary_presensi')->where('id', $cek['id'])->delete();
+                          }
+                      }
+                  }
+              }else{
+                  $this->notify('failure', 'ID Pegawai atau jadwal shift tidak sesuai. Silahkan pilih berdasarkan shift departemen anda!');
+              }
+          }
+      }
+      //echo 'Upload';
+      exit();
+    }
+
 }

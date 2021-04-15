@@ -4,7 +4,6 @@ namespace Plugins\Kepegawaian;
 
 use Systems\AdminModule;
 use Systems\Lib\Fpdf\PDF_MC_Table;
-use Systems\Lib\QR_BarCode;
 
 class Admin extends AdminModule
 {
@@ -108,7 +107,6 @@ class Admin extends AdminModule
     public function getEdit($id)
     {
         $this->_addHeaderFiles();
-        $qr = new QR_BarCode();
         $row = $this->db('pegawai')->oneArray($id);
         if (!empty($row)) {
             $this->assign['form'] = $row;
@@ -130,13 +128,6 @@ class Admin extends AdminModule
 
             $this->assign['fotoURL'] = url(WEBAPPS_PATH.'/penggajian/'.$row['photo']);
 
-            $qr->pegawai($row['nama'], $row['nik']);
-            $qr->qrCode(180, UPLOADS.'/qrcode/pegawai/'.$row['nik'].'.png');
-            $file_url = url().'/uploads/qrcode/pegawai/'.$row['nik'].'.png';
-            $QR = imagecreatefrompng(UPLOADS.'/qrcode/pegawai/'.$row['nik'].'.png');
-            imagepng($QR,UPLOADS.'/qrcode/pegawai/'.$row['nik'].'.png');
-            $this->assign['qrCode'] = $file_url;
-
             return $this->draw('form.html', ['pegawai' => $this->assign]);
         } else {
             redirect(url([ADMIN, 'kepegawaian', 'manage']));
@@ -153,6 +144,11 @@ class Admin extends AdminModule
             $this->assign['petugas'] = $this->db('petugas')->where('nip',$row['nik'])->oneArray();
             $this->assign['stts_wp'] = $this->db('stts_wp')->where('stts',$row['stts_wp'])->oneArray();
             $this->assign['manageURL'] = url([ADMIN, 'kepegawaian', 'manage']);
+
+            $this->assign['fotoURL'] = url('/plugins/kepegawaian/img/default.png');
+            if(!empty($row['photo'])) {
+              $this->assign['fotoURL'] = WEBAPPS_URL.'/penggajian/'.$row['photo'];
+            }
 
             return $this->draw('view.html', ['kepegawaian' => $this->assign]);
         } else {

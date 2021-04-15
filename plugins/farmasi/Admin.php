@@ -10,10 +10,21 @@ class Admin extends AdminModule
     public function navigation()
     {
         return [
-            'Databarang' => 'manage',
+            'Kelola' => 'index',
+            'Obat & BHP' => 'manage',
             'Stok Opname' => 'opname',
             'Pengaturan' => 'settings',
         ];
+    }
+
+    public function getIndex()
+    {
+      $sub_modules = [
+        ['name' => 'Obat & BHP', 'url' => url([ADMIN, 'farmasi', 'manage']), 'icon' => 'medkit', 'desc' => 'Data obat dan barang habis pakai'],
+        ['name' => 'Stok Opname', 'url' => url([ADMIN, 'farmasi', 'opname']), 'icon' => 'medkit', 'desc' => 'Tambah stok opname'],
+        ['name' => 'Pengaturan', 'url' => url([ADMIN, 'farmasi', 'settings']), 'icon' => 'medkit', 'desc' => 'Pengaturan farmasi dan depo'],
+      ];
+      return $this->draw('index.html', ['sub_modules' => $sub_modules]);
     }
 
     public function getManage($status = '1')
@@ -82,6 +93,14 @@ class Admin extends AdminModule
               'no_batch' => '0',
               'no_faktur' => '0'
             ]);
+            if($query2) {
+              $this->db('gudangbarang')
+                ->where('kode_brng', $_POST['kode_brng'])
+                ->where('kd_bangsal', $this->settings->get('farmasi.gudang'))
+                ->save([
+                  'stok' => $get_gudangbarang['stok'] + $_POST['stok']
+              ]);
+            }
         } else {
 
           $query = $this->db('riwayat_barang_medis')
@@ -159,6 +178,16 @@ class Admin extends AdminModule
               'no_batch' => '0',
               'no_faktur' => '0'
             ]);
+            if($query) {
+              $this->db('gudangbarang')->save([
+                'kode_brng' => $_POST['kode_brng'],
+                'kd_bangsal' => $this->settings->get('farmasi.gudang'),
+                'stok' => $_POST['stok'],
+                'no_batch' => '0',
+                'no_faktur' => '0'
+              ]);
+            }
+
         } else {
 
           $query = $this->db('riwayat_barang_medis')
@@ -194,24 +223,23 @@ class Admin extends AdminModule
               'no_batch' => '0',
               'no_faktur' => '0'
             ]);
-        }
-        if($query) {
-          $this->db('gudangbarang')->save([
-            'kode_brng' => $_POST['kode_brng'],
-            'kd_bangsal' => $this->settings->get('farmasi.gudang'),
-            'stok' => $stok - $_POST['stok'],
-            'no_batch' => '0',
-            'no_faktur' => '0'
-          ]);
-        }
-        if($query2) {
-          $this->db('gudangbarang')->save([
-            'kode_brng' => $_POST['kode_brng'],
-            'kd_bangsal' => $_POST['kd_bangsal'],
-            'stok' => $_POST['stok'],
-            'no_batch' => '0',
-            'no_faktur' => '0'
-          ]);
+          if($query) {
+            $this->db('gudangbarang')
+              ->where('kode_brng', $_POST['kode_brng'])
+              ->where('kd_bangsal', $this->settings->get('farmasi.gudang'))
+              ->save([
+                'stok' => $get_gudangbarang['stok'] - $_POST['stok']
+            ]);
+          }
+          if($query2) {
+            $this->db('gudangbarang')->save([
+              'kode_brng' => $_POST['kode_brng'],
+              'kd_bangsal' => $_POST['kd_bangsal'],
+              'stok' => $_POST['stok'],
+              'no_batch' => '0',
+              'no_faktur' => '0'
+            ]);
+          }
         }
       }
 

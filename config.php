@@ -30,21 +30,19 @@ define('FILE_LOCK', false);
 
 // Basic modules
 define('BASIC_MODULES', serialize([
-    8 => 'settings',
-    //4 => 'master',
-    //1 => 'pasien',
-    //2 => 'rawat_jalan',
-    //3 => 'kasir_rawat_jalan',
-    //11 => 'rawat_inap',
-    //5 => 'anjungan',
+    9 => 'settings',
     0 => 'dashboard',
-    7 => 'users',
-    6 => 'modules',
-    //9 => 'icd',
-    //10 => 'vclaim'
+    1 => 'master',
+    2 => 'pasien',
+    3 => 'rawat_jalan',
+    4 => 'kasir_rawat_jalan',
+    5 => 'kepegawaian',
+    6 => 'farmasi',
+    8 => 'users',
+    7 => 'modules'
 ]));
 
 // Developer mode
-define('DEV_MODE', true);
+define('DEV_MODE', false);
 
 ?>

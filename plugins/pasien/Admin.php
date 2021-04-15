@@ -17,6 +17,7 @@ class Admin extends AdminModule
 
     public function getManage()
     {
+        $this->core->addJS(url(MODULES.'/dashboard/js/admin/webcam.js?v={$mlite.version}'));
         $this->_addHeaderFiles();
 
         $perpage = '10';
@@ -49,7 +50,8 @@ class Admin extends AdminModule
           'halaman' => $halaman,
           'jumlah_data' => $jumlah_data,
           'jml_halaman' => $jml_halaman,
-          'cek_vclaim' => $cek_vclaim
+          'cek_vclaim' => $cek_vclaim,
+          'admin_mode' => $this->settings->get('settings.admin_mode')
         ]);
 
     }
@@ -110,7 +112,8 @@ class Admin extends AdminModule
           'halaman' => $halaman,
           'jumlah_data' => $jumlah_data,
           'jml_halaman' => $jml_halaman,
-          'cek_vclaim' => $cek_vclaim
+          'cek_vclaim' => $cek_vclaim,
+          'admin_mode' => $this->settings->get('settings.admin_mode')
         ]);
 
         exit();
@@ -119,11 +122,11 @@ class Admin extends AdminModule
     public function anyForm()
     {
 
+      $no_rkm_medis = '000001';
       $max_id = $this->db('pasien')->select(['no_rkm_medis' => 'ifnull(MAX(CONVERT(RIGHT(no_rkm_medis,6),signed)),0)'])->oneArray();
-      if(empty($max_id['no_rkm_medis'])) {
-        $max_id['no_rkm_medis'] = '000000';
+      if($max_id['no_rkm_medis']) {
+        $no_rkm_medis = sprintf('%06s', ($max_id['no_rkm_medis'] + 1));
       }
-      $no_rkm_medis = sprintf('%06s', ($max_id['no_rkm_medis'] + 1));
 
       $penjab = $this->db('penjab')->toArray();
       $stts_nikah = array('BELUM MENIKAH','MENIKAH','JANDA','DUDHA','JOMBLO');
@@ -143,7 +146,10 @@ class Admin extends AdminModule
           'agama' => $agama,
           'pnd' => $pnd,
           'keluarga' => $keluarga,
-          'no_rkm_medis_baru' => $no_rkm_medis+1
+          'no_rkm_medis_baru' => $no_rkm_medis+1,
+          'waapitoken' => $this->settings->get('settings.waapitoken'),
+          'admin_mode' => $this->settings->get('settings.admin_mode'),
+          'urlUploadPhoto' => url([ADMIN,'pasien','uploadphoto',$_POST['no_rkm_medis']])
         ]);
       } else {
         $pasien = [
@@ -153,23 +159,23 @@ class Admin extends AdminModule
           'jk' => '',
           'tmp_lahir' => '',
           'tgl_lahir' => '',
-          'nm_ibu' => '',
+          'nm_ibu' => '-',
           'alamat' => '',
-          'gol_darah' => '',
-          'pekerjaan' => '',
+          'gol_darah' => '-',
+          'pekerjaan' => '-',
           'stts_nikah' => '',
-          'agama' => '',
+          'agama' => 'ISLAM',
           'tgl_daftar' => date('Y-m-d'),
           'no_tlp' => '',
           'umur' => '',
-          'pnd' => '',
+          'pnd' => '-',
           'keluarga' => '',
-          'namakeluarga' => '',
+          'namakeluarga' => '-',
           'kd_pj' => '',
           'no_peserta' => '',
-          'kd_kel' => '',
-          'kd_kec' => '',
-          'kd_kab' => '',
+          'kd_kel' => '1',
+          'kd_kec' => '1',
+          'kd_kab' => '1',
           'pekerjaanpj' => '',
           'alamatpj' => '',
           'kelurahanpj' => '',
@@ -179,14 +185,14 @@ class Admin extends AdminModule
           'suku_bangsa' => '',
           'bahasa_pasien' => '',
           'cacat_fisik' => '',
-          'email' => '',
+          'email' => '-',
           'nip' => '',
-          'kd_prop' => '',
+          'kd_prop' => '1',
           'propinsipj' => '',
-          'propinsi' => ['nm_prop' => ''],
-          'kabupaten' => ['nm_kab' => ''],
-          'kecamatan' => ['nm_kec' => ''],
-          'kelurahan' => ['nm_kel' => '']
+          'propinsi' => ['nm_prop' => '-'],
+          'kabupaten' => ['nm_kab' => '-'],
+          'kecamatan' => ['nm_kec' => '-'],
+          'kelurahan' => ['nm_kel' => '-']
         ];
         echo $this->draw('form.html', [
           'pasien' => $pasien,
@@ -195,7 +201,10 @@ class Admin extends AdminModule
           'agama' => $agama,
           'pnd' => $pnd,
           'keluarga' => $keluarga,
-          'no_rkm_medis_baru' => $no_rkm_medis
+          'no_rkm_medis_baru' => $no_rkm_medis,
+          'waapitoken' => $this->settings->get('settings.waapitoken'),
+          'admin_mode' => $this->settings->get('settings.admin_mode'),
+          'urlUploadPhoto' => ''
         ]);
       }
       exit();
@@ -225,7 +234,7 @@ class Admin extends AdminModule
       }
 
       if (!$pasien) {
-        $no_rkm_medis = '000000';
+        $no_rkm_medis = '000001';
         $max_id = $this->db('pasien')->select(['no_rkm_medis' => 'ifnull(MAX(CONVERT(RIGHT(no_rkm_medis,6),signed)),0)'])->oneArray();
         if($max_id['no_rkm_medis']) {
           $no_rkm_medis = sprintf('%06s', ($max_id['no_rkm_medis'] + 1));
@@ -276,7 +285,14 @@ class Admin extends AdminModule
       exit();
     }
 
-    public function postSavePhoto()
+    public function getUploadPhoto()
+    {
+      $no_rkm_medis = parseURL()[2];
+      $this->core->addJS(url(MODULES.'/dashboard/js/admin/webcam.js?v={$mlite.version}'));
+      return $this->draw('uploadphoto.html', ['no_rkm_medis' => $no_rkm_medis]);
+    }
+
+    public function postSavePhoto($no_rkm_medis = null)
     {
 
       /*if($_FILES['file']['name'] != ''){
@@ -290,9 +306,33 @@ class Admin extends AdminModule
           echo '<img src="'.url().'/uploads/'.$name.'" height="100" width="100" />';
       }*/
 
+        if($no_rkm_medis != null) {
+          $_POST['no_rkm_medis'] = $no_rkm_medis;
+        }
+
         $personal_pasien = $this->db('personal_pasien')->where('no_rkm_medis', $_POST['no_rkm_medis'])->oneArray();
 
         if (($photo = isset_or($_FILES['file']['tmp_name'], false)) || !$_POST['no_rkm_medis']) {
+            $img = new \Systems\Lib\Image;
+            if ($img->load($photo)) {
+                if ($img->getInfos('width') < $img->getInfos('height')) {
+                    $img->crop(0, 0, $img->getInfos('width'), $img->getInfos('width'));
+                } else {
+                    $img->crop(0, 0, $img->getInfos('height'), $img->getInfos('height'));
+                }
+
+                if ($img->getInfos('width') > 512) {
+                    $img->resize(512, 512);
+                }
+
+                $gambar = "pages/upload/".uniqid('photo').".".$img->getInfos('type');
+                //$gambar = "pages/upload/".$_POST['no_rkm_medis'].".".$img->getInfos('type');
+            }
+
+        }
+
+        //if (($photo = isset_or($_FILES['webcam']['tmp_name'], false)) || !$_POST['no_rkm_medis']) {
+        if ($photo = isset_or($_FILES['webcam']['tmp_name'], false)) {
             $img = new \Systems\Lib\Image;
             if ($img->load($photo)) {
                 if ($img->getInfos('width') < $img->getInfos('height')) {
@@ -327,6 +367,8 @@ class Admin extends AdminModule
             echo '<img src="'.WEBAPPS_URL.'/photopasien/'.$gambar.'" height="100" width="100" />';
 
         }
+
+        exit();
 
     }
 
@@ -710,6 +752,8 @@ class Admin extends AdminModule
     private function _addHeaderFiles()
     {
         $this->core->addCSS(url('assets/css/bootstrap-datetimepicker.css'));
+        $this->core->addJS(url('assets/jscripts/lightbox/lightbox.min.js'));
+        $this->core->addCSS(url('assets/jscripts/lightbox/lightbox.min.css'));
         $this->core->addJS(url('assets/jscripts/moment-with-locales.js'));
         $this->core->addJS(url('assets/jscripts/bootstrap-datetimepicker.js'));
         $this->core->addJS(url([ADMIN, 'pasien', 'javascript']), 'footer');

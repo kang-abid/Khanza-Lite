@@ -198,6 +198,8 @@ class Admin extends AdminModule
         $_next_no_resep = sprintf('%04s', ($max_id['no_resep'] + 1));
         $no_resep = date('Ymd').''.$_next_no_resep;
 
+        $_POST['jam_rawat'] = date('H:i:s');
+
         $resep_obat = $this->db('resep_obat')
           ->save([
             'no_resep' => $no_resep,
@@ -207,7 +209,7 @@ class Admin extends AdminModule
             'kd_dokter' => $this->core->getUserInfo('username', null, true),
             'tgl_peresepan' => $_POST['tgl_perawatan'],
             'jam_peresepan' => $_POST['jam_rawat'],
-            'status' => 'ranap'
+            'status' => 'ralan'
           ]);
 
         if ($resep_obat) {
@@ -223,23 +225,23 @@ class Admin extends AdminModule
               'aturan_pakai' => $_POST['aturan_pakai'],
               'keterangan' => $_POST['keterangan']
             ]);
-            $_POST['kode_brng'] = json_decode($_POST['kode_brng'], true);
-            $_POST['kandungan'] = json_decode($_POST['kandungan'], true);
-            for ($i = 0; $i < count($_POST['kode_brng']); $i++) {
-              $kapasitas = $this->db('databarang')->where('kode_brng', $_POST['kode_brng'][$i]['value'])->oneArray();
-              $jml = $_POST['jml']*$_POST['kandungan'][$i]['value'];
-              $jml = round(($jml/$kapasitas['kapasitas']),1);
-              $this->db('resep_dokter_racikan_detail')
-                ->save([
-                  'no_resep' => $no_resep,
-                  'no_racik' => $no_racik,
-                  'kode_brng' => $_POST['kode_brng'][$i]['value'],
-                  'p1' => '1',
-                  'p2' => '1',
-                  'kandungan' => $_POST['kandungan'][$i]['value'],
-                  'jml' => $jml
-                ]);
-            }
+          $_POST['kode_brng'] = json_decode($_POST['kode_brng'], true);
+          $_POST['kandungan'] = json_decode($_POST['kandungan'], true);
+          for ($i = 0; $i < count($_POST['kode_brng']); $i++) {
+            $kapasitas = $this->db('databarang')->where('kode_brng', $_POST['kode_brng'][$i]['value'])->oneArray();
+            $jml = $_POST['jml']*$_POST['kandungan'][$i]['value'];
+            $jml = round(($jml/$kapasitas['kapasitas']),1);
+            $this->db('resep_dokter_racikan_detail')
+              ->save([
+                'no_resep' => $no_resep,
+                'no_racik' => $no_racik,
+                'kode_brng' => $_POST['kode_brng'][$i]['value'],
+                'p1' => '1',
+                'p2' => '1',
+                'kandungan' => $_POST['kandungan'][$i]['value'],
+                'jml' => $jml
+              ]);
+          }
         }
       }
 
@@ -485,7 +487,9 @@ class Admin extends AdminModule
 
       $rows = $this->db('resep_obat')
         ->join('dokter', 'dokter.kd_dokter=resep_obat.kd_dokter')
+        ->join('resep_dokter', 'resep_dokter.no_resep=resep_obat.no_resep')
         ->where('no_rawat', $_POST['no_rawat'])
+        ->group('resep_dokter.no_resep')
         ->toArray();
       $resep = [];
       $jumlah_total_resep = 0;
@@ -503,6 +507,7 @@ class Admin extends AdminModule
         ->join('dokter', 'dokter.kd_dokter=resep_obat.kd_dokter')
         ->join('resep_dokter_racikan', 'resep_dokter_racikan.no_resep=resep_obat.no_resep')
         ->where('no_rawat', $_POST['no_rawat'])
+        ->group('resep_dokter_racikan.no_resep')
         ->toArray();
       $resep_racikan = [];
       $jumlah_total_resep_racikan = 0;
