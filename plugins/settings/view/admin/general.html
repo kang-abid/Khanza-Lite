@@ -89,7 +89,8 @@
                 </div>
                 <div class="panel-body">
                     {if: $settings.master}
-                    <div class="form-group {if: empty($settings.module_rawat_igd)}hidden{/if}">
+                    {if: $settings.module_rawat_igd}
+                    <div class="form-group">
                         <label>IGD</label>
                         <select name="igd" class="form-control" data-use-search="true">
                             {loop: $settings.poliklinik}
@@ -97,7 +98,9 @@
                             {/loop}
                         </select>
                     </div>
-                    <div class="form-group {if: empty($settings.module_laboratorium)}hidden{/if}">
+                    {/if}
+                    {if: $settings.module_laboratorium}
+                    <div class="form-group">
                         <label>Laboratorium</label>
                         <select name="laboratorium" class="form-control" data-use-search="true">
                             {loop: $settings.poliklinik}
@@ -113,7 +116,9 @@
                             {/loop}
                         </select>
                     </div>
-                    <div class="form-group {if: empty($settings.module_radiologi)}hidden{/if}">
+                    {/if}
+                    {if: $settings.module_radiologi}
+                    <div class="form-group">
                         <label>Radiologi</label>
                         <select name="radiologi" class="form-control" data-use-search="true">
                             {loop: $settings.poliklinik}
@@ -129,6 +134,7 @@
                             {/loop}
                         </select>
                     </div>
+                    {/if}
                     {/if}
                     {if: $settings.rawat_jalan}
                     <div class="form-group">
@@ -210,6 +216,18 @@
                          </div>
                     </div>
                     <div class="form-group">
+                         <label>Input Kasir</label>
+                         <div class="radio">
+                             <label class="radio-inline">
+                                <input type="radio" name="input_kasir" value="ya" {if: $settings.input_kasir == 'ya'}checked{/if} /> Ya
+                             </label>
+                             <label class="radio-inline">
+                                <input type="radio" name="input_kasir" value="tidak" {if: $settings.input_kasir == 'tidak'}checked{/if} /> Tidak
+                             </label>
+                         </div>
+                    </div>
+                    <!--
+                    <div class="form-group">
                          <label>Footer</label>
                          <input type="text" name="footer" class="form-control" value="{$settings.footer}" required />
                     </div>
@@ -224,6 +242,7 @@
                              </label>
                          </div>
                     </div>
+                    -->
                     <input type="submit" name="save" class="btn btn-primary" value="Simpan" />
                 </div>
             </div>

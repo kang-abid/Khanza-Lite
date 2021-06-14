@@ -2,6 +2,7 @@
 namespace Plugins\Pasien;
 
 use Systems\AdminModule;
+use Systems\Lib\Fpdf\PDF_MC_Table;
 use Plugins\Pasien\DB_Wilayah;
 use Plugins\Icd\DB_ICD;
 
@@ -122,12 +123,6 @@ class Admin extends AdminModule
     public function anyForm()
     {
 
-      $no_rkm_medis = '000001';
-      $max_id = $this->db('pasien')->select(['no_rkm_medis' => 'ifnull(MAX(CONVERT(RIGHT(no_rkm_medis,6),signed)),0)'])->oneArray();
-      if($max_id['no_rkm_medis']) {
-        $no_rkm_medis = sprintf('%06s', ($max_id['no_rkm_medis'] + 1));
-      }
-
       $penjab = $this->db('penjab')->toArray();
       $stts_nikah = array('BELUM MENIKAH','MENIKAH','JANDA','DUDHA','JOMBLO');
       $agama = array('ISLAM', 'KRISTEN', 'PROTESTAN', 'HINDU', 'BUDHA', 'KONGHUCU', 'KEPERCAYAAN');
@@ -146,7 +141,7 @@ class Admin extends AdminModule
           'agama' => $agama,
           'pnd' => $pnd,
           'keluarga' => $keluarga,
-          'no_rkm_medis_baru' => $no_rkm_medis+1,
+          'no_rkm_medis_baru' => $this->core->setNoRM(),
           'waapitoken' => $this->settings->get('settings.waapitoken'),
           'admin_mode' => $this->settings->get('settings.admin_mode'),
           'urlUploadPhoto' => url([ADMIN,'pasien','uploadphoto',$_POST['no_rkm_medis']])
@@ -201,7 +196,7 @@ class Admin extends AdminModule
           'agama' => $agama,
           'pnd' => $pnd,
           'keluarga' => $keluarga,
-          'no_rkm_medis_baru' => $no_rkm_medis,
+          'no_rkm_medis_baru' => $this->core->setNoRM(),
           'waapitoken' => $this->settings->get('settings.waapitoken'),
           'admin_mode' => $this->settings->get('settings.admin_mode'),
           'urlUploadPhoto' => ''
@@ -234,12 +229,7 @@ class Admin extends AdminModule
       }
 
       if (!$pasien) {
-        $no_rkm_medis = '000001';
-        $max_id = $this->db('pasien')->select(['no_rkm_medis' => 'ifnull(MAX(CONVERT(RIGHT(no_rkm_medis,6),signed)),0)'])->oneArray();
-        if($max_id['no_rkm_medis']) {
-          $no_rkm_medis = sprintf('%06s', ($max_id['no_rkm_medis'] + 1));
-        }
-        $_POST['no_rkm_medis'] = $no_rkm_medis;
+        $_POST['no_rkm_medis'] = $this->core->setNoRM();
         $_POST['tmp_lahir'] = '-';
         $_POST['umur'] = $this->hitungUmur($_POST['tgl_lahir']);
         $_POST['pekerjaanpj'] = '-';
@@ -259,12 +249,7 @@ class Admin extends AdminModule
         unset($_POST['nm_kel']);
         $query = $this->db('pasien')->save($_POST);
         if($query) {
-          $check_table = $this->db()->pdo()->query("SHOW TABLES LIKE 'set_no_rkm_medis'");
-          $check_table->execute();
-          $check_table = $check_table->fetch();
-          if($check_table) {
-            $this->core->db()->pdo()->exec("UPDATE set_no_rkm_medis SET no_rkm_medis='$_POST[no_rkm_medis]'");
-          }
+          $this->core->db()->pdo()->exec("UPDATE set_no_rkm_medis SET no_rkm_medis='$_POST[no_rkm_medis]'");
         }
       } else {
         unset($_POST['nm_prop']);
@@ -660,6 +645,92 @@ class Admin extends AdminModule
       $this->tpl->set('riwayat', $this->tpl->noParse_array(htmlspecialchars_array($riwayat)));
       echo $this->draw('riwayat.perawatan.dokter.html');
       exit();
+    }
+
+    public function postCetak()
+    {
+      $this->core->db()->pdo()->exec("DELETE FROM `mlite_temporary`");
+      $cari = $_POST['cari'];
+      $this->core->db()->pdo()->exec("INSERT INTO `mlite_temporary` (
+        `temp1`,
+        `temp2`,
+        `temp3`,
+        `temp4`,
+        `temp5`,
+        `temp6`,
+        `temp7`,
+        `temp8`,
+        `temp9`,
+        `temp10`,
+        `temp11`,
+        `temp12`,
+        `temp13`,
+        `temp14`,
+        `temp15`,
+        `temp16`,
+        `temp17`,
+        `temp18`,
+        `temp19`,
+        `temp20`,
+        `temp21`,
+        `temp22`,
+        `temp23`,
+        `temp24`,
+        `temp25`,
+        `temp26`,
+        `temp27`,
+        `temp28`,
+        `temp29`,
+        `temp30`,
+        `temp31`,
+        `temp32`,
+        `temp33`,
+        `temp34`,
+        `temp35`,
+        `temp36`
+      )
+      SELECT *
+      FROM `pasien`
+      WHERE (`no_rkm_medis` LIKE '%$cari%' OR `nm_pasien` LIKE '%$cari%' OR `alamat` LIKE '%$cari%')
+      ");
+      exit();
+    }
+
+    public function getCetakPdf()
+    {
+      $tmp = $this->db('mlite_temporary')->toArray();
+      $logo = $this->settings->get('settings.logo');
+
+      $pdf = new PDF_MC_Table('L','mm','Legal');
+      $pdf->AddPage();
+      $pdf->SetAutoPageBreak(true, 10);
+      $pdf->SetTopMargin(10);
+      $pdf->SetLeftMargin(10);
+      $pdf->SetRightMargin(10);
+
+      $pdf->Image('../'.$logo, 10, 8, '18', '18', 'png');
+      $pdf->SetFont('Arial', '', 24);
+      $pdf->Text(30, 16, $this->settings->get('settings.nama_instansi'));
+      $pdf->SetFont('Arial', '', 10);
+      $pdf->Text(30, 21, $this->settings->get('settings.alamat').' - '.$this->settings->get('settings.kota'));
+      $pdf->Text(30, 25, $this->settings->get('settings.nomor_telepon').' - '.$this->settings->get('settings.email'));
+      $pdf->Line(10, 30, 345, 30);
+      $pdf->Line(10, 31, 345, 31);
+      $pdf->SetFont('Arial', 'B', 13);
+      $pdf->Text(10, 40, 'DATA PASIEN');
+      $pdf->Ln(34);
+      $pdf->SetFont('Arial', 'B', 11);
+      $pdf->SetWidths(array(20,65,35,25,25,70,25,30,40));
+      $pdf->Row(array('No. RM','Nama Pasien','No. KTP','J. Kelamin','Tgl. Lahir','Alamat','Tgl. Daftar','No. Telp','Email'));
+      $pdf->SetFont('Arial', '', 10);
+      foreach ($tmp as $hasil) {
+        $j_kelamin = 'Laki-Laki';
+        if($hasil['temp4'] == 'P') {
+          $j_kelamin = 'Perempuan';
+        }
+        $pdf->Row(array($hasil['temp1'],$hasil['temp2'],$hasil['temp3'],$j_kelamin,$hasil['temp6'],$hasil['temp8'],$hasil['temp13'],$hasil['temp14'],$hasil['temp33']));
+      }
+      $pdf->Output('cetak'.date('Y-m-d').'.pdf','I');
     }
 
     public function anyWilayah()

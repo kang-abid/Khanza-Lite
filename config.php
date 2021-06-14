@@ -6,12 +6,12 @@ if (!version_compare(PHP_VERSION, '5.5.0', '>=')) {
 define('DBHOST', 'localhost');
 define('DBPORT', '3306');
 define('DBUSER', 'root');
-define('DBPASS', '');
-define('DBNAME', 'sik');
+define('DBPASS', 'basoro');
+define('DBNAME', 'mlite');
 
 // URL Webapps
-define('WEBAPPS_URL', 'http://localhost/webapps');
-define('WEBAPPS_PATH', BASE_DIR . '/../webapps');
+define('WEBAPPS_URL', 'http://localhost/Khanza-Lite/webapps');
+define('WEBAPPS_PATH', BASE_DIR . '/webapps');
 
 // Admin cat name
 define('ADMIN', 'admin');

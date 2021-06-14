@@ -126,7 +126,7 @@ class Admin extends AdminModule
             $this->assign['bank'] = $this->db('bank')->toArray();
             $this->assign['emergency_index'] = $this->db('emergency_index')->toArray();
 
-            $this->assign['fotoURL'] = url(WEBAPPS_PATH.'/penggajian/'.$row['photo']);
+            $this->assign['fotoURL'] = WEBAPPS_URL.'/penggajian/'.$row['photo'];
 
             return $this->draw('form.html', ['pegawai' => $this->assign]);
         } else {
@@ -145,7 +145,7 @@ class Admin extends AdminModule
             $this->assign['stts_wp'] = $this->db('stts_wp')->where('stts',$row['stts_wp'])->oneArray();
             $this->assign['manageURL'] = url([ADMIN, 'kepegawaian', 'manage']);
 
-            $this->assign['fotoURL'] = url('/plugins/kepegawaian/img/default.png');
+            $this->assign['fotoURL'] = url(MODULES.'/kepegawaian/img/default.png');
             if(!empty($row['photo'])) {
               $this->assign['fotoURL'] = WEBAPPS_URL.'/penggajian/'.$row['photo'];
             }
@@ -228,7 +228,7 @@ class Admin extends AdminModule
     public function getPrint()
     {
       $pasien = $this->db('pegawai')->toArray();
-      $logo = url().'/'.$this->settings->get('settings.logo');
+      $logo = $this->settings->get('settings.logo');
 
       $pdf = new PDF_MC_Table();
       $pdf->AddPage();
@@ -237,7 +237,7 @@ class Admin extends AdminModule
       $pdf->SetLeftMargin(10);
       $pdf->SetRightMargin(10);
 
-      $pdf->Image($logo, 10, 8, '18', '18', 'png');
+      $pdf->Image('../'.$logo, 10, 8, '18', '18', 'png');
       $pdf->SetFont('Arial', '', 24);
       $pdf->Text(30, 16, $this->settings->get('settings.nama_instansi'));
       $pdf->SetFont('Arial', '', 10);

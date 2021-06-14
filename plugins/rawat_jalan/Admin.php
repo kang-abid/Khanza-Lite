@@ -3,6 +3,7 @@ namespace Plugins\Rawat_Jalan;
 
 use Systems\AdminModule;
 use Plugins\Icd\DB_ICD;
+use Systems\Lib\Fpdf\PDF_MC_Table;
 
 class Admin extends AdminModule
 {
@@ -10,10 +11,11 @@ class Admin extends AdminModule
     public function navigation()
     {
         return [
-            'Kelola'   => 'index',
-            'Rawat Jalan'   => 'manage',
-            'Booking'          => 'booking',
-            'Jadwal Dokter'          => 'jadwal'
+            'Kelola'              => 'index',
+            'Rawat Jalan'         => 'manage',
+            'Booking Registrasi'  => 'booking',
+            'Booking Periksa'     => 'bookingperiksa',
+            'Jadwal Dokter'       => 'jadwal'
         ];
     }
 
@@ -87,7 +89,7 @@ class Admin extends AdminModule
         }
         $this->_addHeaderFiles();
 
-        $this->assign['poliklinik']     = $this->db('poliklinik')->where('status', '1')->toArray();
+        $this->assign['poliklinik']     = $this->db('poliklinik')->where('status', '1')->where('kd_poli', '<>', $this->settings->get('settings.igd'))->toArray();
         $this->assign['dokter']         = $this->db('dokter')->where('status', '1')->toArray();
         $this->assign['penjab']       = $this->db('penjab')->toArray();
         $this->assign['no_rawat'] = '';
@@ -462,6 +464,54 @@ class Admin extends AdminModule
       $this->assign['searchUrl'] =  url([ADMIN, 'rawat_jalan', 'booking', $page.'?s='.$phrase.'&start_date='.$start_date.'&end_date='.$end_date]);
       return $this->draw('booking.html', ['booking' => $this->assign, 'waapitoken' => $waapitoken, 'nama_instansi' => $nama_instansi]);
 
+    }
+
+    public function getBookingPeriksa()
+    {
+        $date = date('Y-m-d');
+        $text = 'Booking Pendaftaran';
+
+        // CSS
+        $this->core->addCSS(url('assets/css/jquery-ui.css'));
+        $this->core->addCSS(url('assets/css/dataTables.bootstrap.min.css'));
+        // JS
+        $this->core->addJS(url('assets/jscripts/jquery-ui.js'), 'footer');
+        $this->core->addJS(url('assets/jscripts/jquery.dataTables.min.js'), 'footer');
+        $this->core->addJS(url('assets/jscripts/dataTables.bootstrap.min.js'), 'footer');
+
+        return $this->draw('booking.periksa.html',
+          [
+            'text' => $text,
+            'waapitoken' => $this->settings->get('settings.waapitoken'),
+            'nama_instansi' => $this->settings->get('settings.nama_instansi'),
+            'booking' => $this->db('booking_periksa')
+              ->select([
+                'no_booking' => 'booking_periksa.no_booking',
+                'tanggal' => 'booking_periksa.tanggal',
+                'nama' => 'booking_periksa.nama',
+                'no_telp' => 'booking_periksa.no_telp',
+                'alamat' => 'booking_periksa.alamat',
+                'email' => 'booking_periksa.email',
+                'nm_poli' => 'poliklinik.nm_poli',
+                'status' => 'booking_periksa.status',
+                'tanggal_booking' => 'booking_periksa.tanggal_booking'
+              ])
+              ->join('poliklinik', 'poliklinik.kd_poli = booking_periksa.kd_poli')
+              ->where('tambahan_pesan', 'jkn_mobile_v2')
+              ->toArray()
+          ]
+        );
+    }
+
+    public function postSaveBookingPeriksa()
+    {
+      $this->db('booking_periksa')->where('no_booking', $_POST['no_booking'])->save(['status' => $_POST['status']]);
+      $this->db('booking_periksa_balasan')
+      ->save([
+        'no_booking' => $_POST['no_booking'],
+        'balasan' => $_POST['message']
+      ]);
+      exit();
     }
 
     public function getJadwal()
@@ -1001,6 +1051,61 @@ class Admin extends AdminModule
         setlocale(LC_ALL, 'en_EN');
         $text = str_replace('/', '', trim($text));
         return $text;
+    }
+
+    public function postCetak()
+    {
+      $this->core->db()->pdo()->exec("DELETE FROM `mlite_temporary`");
+      $cari = $_POST['cari'];
+      $tgl_awal = $_POST['tgl_awal'];
+      $tgl_akhir = $_POST['tgl_akhir'];
+      $igd = $this->settings->get('settings.igd');
+      $this->core->db()->pdo()->exec("INSERT INTO `mlite_temporary` (
+        `temp1`,`temp2`,`temp3`,`temp4`,`temp5`,`temp6`,`temp7`,`temp8`,`temp9`,`temp10`,`temp11`,`temp12`,`temp13`,`temp14`,`temp15`,`temp16`,`temp17`,`temp18`,`temp19`
+      )
+      SELECT *
+      FROM `reg_periksa`
+      WHERE (`no_rawat` LIKE '%$cari%' OR `tgl_registrasi` LIKE '%$cari%')
+      AND `kd_poli` <> '$igd'
+      AND `tgl_registrasi` BETWEEN '$tgl_awal' AND '$tgl_akhir'
+      ");
+      exit();
+    }
+
+    public function getCetakPdf()
+    {
+      $tmp = $this->db('mlite_temporary')->toArray();
+      $logo = $this->settings->get('settings.logo');
+
+      $pdf = new PDF_MC_Table('L','mm','Legal');
+      $pdf->AddPage();
+      $pdf->SetAutoPageBreak(true, 10);
+      $pdf->SetTopMargin(10);
+      $pdf->SetLeftMargin(10);
+      $pdf->SetRightMargin(10);
+
+      $pdf->Image('../'.$logo, 10, 8, '18', '18', 'png');
+      $pdf->SetFont('Arial', '', 24);
+      $pdf->Text(30, 16, $this->settings->get('settings.nama_instansi'));
+      $pdf->SetFont('Arial', '', 10);
+      $pdf->Text(30, 21, $this->settings->get('settings.alamat').' - '.$this->settings->get('settings.kota'));
+      $pdf->Text(30, 25, $this->settings->get('settings.nomor_telepon').' - '.$this->settings->get('settings.email'));
+      $pdf->Line(10, 30, 345, 30);
+      $pdf->Line(10, 31, 345, 31);
+      $pdf->SetFont('Arial', 'B', 13);
+      $pdf->Text(10, 40, 'DATA PENDAFTARAN POLIKLINIK');
+      $pdf->Ln(34);
+      $pdf->SetFont('Arial', 'B', 11);
+      $pdf->SetWidths(array(25,35,20,80,25,50,50,50));
+      $pdf->Row(array('Tanggal','No. Rawat','No. Reg','Nama Pasien','No. RM','Poliklinik','Dokter','Penjamin'));
+      $pdf->SetFont('Arial', '', 10);
+      foreach ($tmp as $hasil) {
+        $poliklinik = $this->db('poliklinik')->where('kd_poli', $hasil['temp7'])->oneArray();
+        $dokter = $this->db('dokter')->where('kd_dokter', $hasil['temp5'])->oneArray();
+        $penjab = $this->db('penjab')->where('kd_pj', $hasil['temp15'])->oneArray();
+        $pdf->Row(array($hasil['temp3'],$hasil['temp2'],$hasil['temp1'],$this->core->getPasienInfo('nm_pasien', $hasil['temp6']),$hasil['temp6'],$poliklinik['nm_poli'],$dokter['nm_dokter'],$penjab['png_jawab']));
+      }
+      $pdf->Output('cetak'.date('Y-m-d').'.pdf','I');
     }
 
     public function getJavascript()
